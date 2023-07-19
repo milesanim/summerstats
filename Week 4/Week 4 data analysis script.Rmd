@@ -1,0 +1,167 @@
+---
+title: "Week 4 Data Analysis Script"
+author: "Miles Anim-Appiah"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reshape2)
+```
+
+
+## Overview
+
+This report presents preliminary data analysis for the week 3 example data. Specifically, this will report basic decriptive statistics as well as report tests of the following predictions:
+
+1. People will feel more guilt when:
+  + 1.1 They caused the shock (vs. their partner)
+  + 1.2 Their partner was morally good (vs. bad)
+  + 1.3 The shock was stronger (high > medium > low)
+2. Women will report more guilt than men
+3. Agreeable people will report more guilt
+4. Neurotic people will report more guilt
+
+and
+
+5. People will be more generous when:
+  + 5.1 They caused the shock (vs. theur partner)
+  + 5.2 The partner was morally good (vs. bad)
+  + 5.3 The shock was stronger (high > medium > low)
+6. Women will be more generous than men
+7. Agreeable people will be more generous
+8. Neurotic people will be more generous
+
+```{r load}
+
+#Load the data
+data<-read.csv("week 3/processed data/week 3 processed data.csv")
+
+#Recode variables
+data$PIN<-as.factor(data$PIN)
+data$sex<-as.factor(data$sex)
+data$shock<-as.factor(data$shock)
+data$shockCause<-as.factor(data$shockCause)
+data$pMoral<-as.factor(data$pMoral)
+
+```
+
+## Descriptives
+
+Descriptive statistics for guilt
+```{r descGuilt}
+
+c(summary(data$guilt),"SD"=sd(data$guilt,na.rm=T))
+
+```
+
+Descriptive statistics for generosity
+```{r descGenerosity}
+
+#Generosity before the shock
+c(summary(data$preShare),"SD"=sd(data$preShare,na.rm=T))
+
+#Generosity after the shock
+c(summary(data$postShare),"SD"=sd(data$postShare,na.rm=T))
+
+```
+
+Descriptive statistics for personality
+```{r}
+#Descriptives for agreeableness
+c(summary(data$agree),"SD"=sd(data$agree,na.rm=T))
+
+#Decriptives for neuroticism
+c(summary(data$neuro),"SD"=sd(data$neuro,na.rm=T))
+
+```
+
+## Guilt
+
+### Prediction 1.1
+
+Prediction 1.1 was supported. People felt more guilty when they caused the shock than when their partner did.
+```{r p1.1}
+#Run the t-test for prediction 1.1
+p1.1<-t.test(data$guilt~data$shockCause)
+
+#Output
+p1.1
+```
+
+### Prediction 1.2
+Prediction 1.2 was supported. People felt more guilty when their partner was morally good.
+```{r p1.2}
+#Run the t-test for prediction 1.2
+p1.2<-t.test(data$guilt~data$pMoral)
+
+#Output
+p1.2
+```
+
+### Prediction 1.3
+Prediction 1.3 was supported. People felt more guilty when their partner received a stronger shock.
+```{r 1.3}
+#Run the one-way ANOVA for prediction 1.3
+p1.3<-lm(guilt~shock,data=data)
+
+#Output
+anova(p1.3)
+tapply(data$guilt,data$shock,function(x) mean(x,na.rm=T))
+```
+
+### Prediction 2
+Prediction 2 was not supported. Women did not report more guilt than men.
+```{r p2}
+#Run the T-test for prediction 2
+p2<-t.test(data$guilt~data$sex)
+
+#output
+p2
+```
+
+### Prediction 3
+Prediction 3 was supported. Agreeable people were more guilty.
+```{r p3}
+#Run the correlation test for prediction 3 
+p3<-cor.test(data$guilt,data$agree)
+
+#Output
+p3
+```
+
+### Prediction 4
+Prediction 4 is not supported. Neurotic people were not more guilty.
+```{r p4}
+#Run the correlation test for prediction 4
+p4<-cor.test(data$guilt,data$neuro)
+
+#Output
+p4
+```
+
+## Generosity
+
+```{r melt}
+dataMelt<-melt(data,
+               measure.vars=c("preShare", "postShare"),
+               variable.name=c("prePost"),
+               value.name=c("share")
+               )
+```
+
+### Prediction 5.1
+Prediction 5.1 was supported. People were more generous when they caused the shock and were actually less generous when the partner caused the shock
+```{r p5.1}
+#Run the within subjects ANOVA for Prediction 5.1
+p5.1<-aov(share~prePost*shockCause+Error(PIN),data=dataMelt)
+
+#Output
+summary(p5.1)
+tapply(dataMelt$share,dataMelt[c(24,21)],function(x) mean(x,na.rm=T))
+```
+
