@@ -1,0 +1,106 @@
+---
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# packages
+library(stringr)
+library(knitr)
+
+```
+
+
+
+```{r load}
+# load raw data
+rawData<-read.csv("week 3/raw data/Week 3 Example Data.csv")
+
+# copy of raw data
+data<-rawData
+```
+
+
+
+```{r restructure}
+# rename tipi columns
+colnames(data)[6:15]<-paste0("tipi",
+                             rep(c("E", "A", "C", "N", "O"),2),1:10)
+# add R to reverse coded items
+colnames(data)[c(7,11,13:15)]<-paste0(colnames(data)[c(7,11,13:15)],"R")
+
+
+###Restructure Variables###
+
+# condition variable split into two columns
+conditionSplit<-str_split_fixed(data$condition, "_",2)
+colnames(conditionSplit)<-c("shockCause", "pMoral")
+
+# add split columns to data
+data<-cbind(data,conditionSplit)
+
+data<-data[,-4]
+data$guilt<-ifelse(data$guilt==-99,NA,data$guilt)
+```
+
+
+
+```{r compute}
+# reverse code the relevant TIPI items
+data[,c(6,10,12:14)]<-(-1*data[,c(6,10,12:14)])+8
+
+data$extra<-rowMeans(data[,c(5,10)])
+data$agree<-rowMeans(data[,c(6,11)])
+data$consc<-rowMeans(data[,c(7,12)])
+data$neuro<-rowMeans(data[,c(8,13)])
+data$open<-rowMeans(data[,c(9,14)])
+```
+
+
+
+```{r codebook}
+# rearrange columns
+data<-data[,c(1:3,5:14,20:24,4,18,19,15:17)]
+codebook<-data.frame("Variable"=colnames(data))
+codebook$description<-c(
+  "Participant ID Number",
+  "Participant Sex",
+  "Participant Age",
+  "TIPI Extraverion 1",
+  "TIPI Agreeableness 1R",
+  "TIPI Conscientiousness 1",
+  "TIPI Neuroticism 1",
+  "TIPI Openness 1",
+  "TIPI Extraverion 2R",
+  "TIPI Agreeableness 2",
+  "TIPI Conscientiousness 2R",
+  "TIPI Neuroticism 2R",
+  "TIPI Openness 2R",
+  "Composite Extraversion",
+  "Composite Agreeableness",
+  "Composite Conscientiousness",
+  "Composite Neuroticism",
+  "Composite Openness",
+  "Shock Voltage",
+  "Shock Cause",
+  "Partner Morality, Good vs. Bad",
+  "Amount of Money Shared with Partner (pre-shock)",
+  "Amount of Money Shared with Partner (post-shock)",
+  "Guilt"
+)
+
+codebook$type<-sapply(data,class)
+
+# codebook table
+kable(codebook)
+```
+
+
+
+```{r save}
+write.csv(data, "week 3/processed data/week 3 processed data.csv")
+```
+
+
+
